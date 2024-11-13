@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"noteColaB/utils"
 )
@@ -15,38 +14,65 @@ type Note struct {
 func GetNotes(w http.ResponseWriter, r *http.Request) {
 
 	// Implementacion de logica para obtener notas
-	w.Write([]byte("Get Notes endpoint"))
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "user not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	userID := cookie.Value
+	// aqui usamos query porque el user puede tener mas de una nota
+	rows, err := utils.Db.Query(`SELECT title, content FROM Notes WHERE user_id = ? `, userID)
+	if err != nil {
+		http.Error(w, "Error fetching your notes", http.StatusInternalServerError)
+		return
+	}
+
+	// para evitar fugas de memoria con la base de datos y liberar conexiones
+	// para optimizar el rendimiento
+	defer rows.Close()
+
+	// creamos lista de notas
+	var notes []Note
+	for rows.Next() {
+		var note Note
+		if err := rows.Scan(&note.Title, &note.Content); err != nil {
+			http.Error(w, "Error scanning your notes", http.StatusInternalServerError)
+			return
+		}
+		notes = append(notes, note)
+	}
+
+	// convertimos a json y enviamos por compatibilidad con
+	// frontend en javascript
+	w.Header().Set("Content-type", "application/json")
+	json.NewEncoder(w).Encode(notes)
+
 }
 
 func CreateNote(w http.ResponseWriter, r *http.Request) {
 
 	// Implemetacion de logica para crear notas
-	w.Write([]byte("Create Note endpoint"))
-}
-
-func createNoteHandler(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "Forbidden method", http.StatusMethodNotAllowed)
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
+	userID := cookie.Value
 	var newNote Note
-	err := json.NewDecoder(r.Body).Decode(&newNote)
-	if err != nil {
-		http.Error(w, "Error when decoding the request", http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&newNote); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
-	_, err = utils.Db.Exec(`INSERT INTO notes (title, notes) VALUES (?, ?)`,
-		newNote.Title, newNote.Content)
+	_, err = utils.Db.Exec(`INSERT INTO Notes(title, content, user_id) VALUES (?, ?, ?)`,
+		newNote.Title, newNote.Content, userID)
 	if err != nil {
-		log.Println("Error when inserting in database", err)
 		http.Error(w, "Error saving the note", http.StatusInternalServerError)
 		return
 	}
 
-	// si no da error
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("Note created"))
+	w.Write([]byte("Note saved!"))
 }

@@ -1,15 +1,22 @@
-// src/App.js
 import React from 'react';
-import NoteList from './components/NoteList';
-import NoteForm from './components/NoteForm';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Register from './components/Register';
+import Login from './components/Login';
+import Notes from './components/Notes';
+import CreateNote from './components/CreateNote';
+import Home from './components/Home';
 
 function App() {
     return (
-        <div className="App">
-            <h1>Servidor de Notas Colaborativo</h1>
-            <NoteForm />
-            <NoteList />
-        </div>
+        <Router>
+            <Routes>
+                <Route path="/" element={<Home/>} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/notes" element={<Notes />} />
+                <Route path="/create_note" element={<CreateNote />} />
+            </Routes>
+        </Router>
     );
 }
 

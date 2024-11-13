@@ -24,17 +24,48 @@ func InitDB(dataSourceName string) error {
 
 	log.Println("Connection to SQLite stablished")
 
-	createTableNotes := `CREATE TABLE Notes (
-						id INTEGER PRIMARY KEY AUTOINCREMENT,
-						title TEXT NOT NULL,
-						content TEXT NOT NULL,
-						created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`
+	if err = createUsersTable(); err != nil {
+		return err
+	}
+
+	if err = createTableNotes(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createUsersTable() error {
+	createUsersTableSQL := `CREATE TABLE IF NOT EXISTS users (
+							id INTEGER PRIMARY KEY AUTOINCREMENT,
+							username TEXT NOT NULL UNIQUE,
+							email TEXT NOT NULL UNIQUE,
+							hash TEXT NOT NULL
+	);`
+
+	_, err := Db.Exec(createUsersTableSQL)
+	if err != nil {
+		return err
+	} else {
+		log.Println("Users table created succesfully")
+	}
+	return nil
+}
+
+func createTableNotes() error {
+	createTableNotes := `CREATE TABLE IF NOT EXISTS Notes(
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title TEXT NOT NULL,
+		user_id INTEGER,
+		content TEXT NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id));`
 
 	// Exec() no devuelve un valor por eso ponemos _ porque en GO las variables que se declaran
 	// tienen que usarse por eso ignoramos el valor de retorno
-	_, err = Db.Exec(createTableNotes)
+	_, err := Db.Exec(createTableNotes)
 	if err != nil {
-		log.Fatal("Error creating table:", err) // detener ejecucion si ocurre error critico
+		return err
 	} else {
 		log.Println("Table 'Notes' created")
 	}

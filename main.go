@@ -1,9 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
+	"noteColaB/handlers"
+	"noteColaB/middleware"
 	"noteColaB/routes"
 	"noteColaB/utils"
 
@@ -18,27 +19,16 @@ func main() {
 		log.Fatalf("Error inicializing the database: %v", err)
 	}
 
+	// configurar enrutador
 	r := routes.SetupRoutes()
-	r.HandleFunc("/", routes.HomeHandler).Methods("GET")
+
+	// ruta protegida con middleware autenticacion
+	protected := r.PathPrefix("/notes").Subrouter()
+	protected.Use(middleware.AuthMiddleware)
+	protected.HandleFunc("/", handlers.GetNotes).Methods("GET")
+	protected.HandleFunc("/", handlers.CreateNote).Methods("POST")
 
 	log.Println("Servidor iniciado en http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", r))
 
-}
-
-// devuelve puntero a sql.DB y un posible error
-func initDB() (*sql.DB, error) {
-
-	db, err := sql.Open("sqlite3", "./notes.db")
-	if err != nil {
-		return nil, err
-	}
-
-	// verify conection
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	log.Println("Conection to SQLite stablished")
-	return db, nil
 }
