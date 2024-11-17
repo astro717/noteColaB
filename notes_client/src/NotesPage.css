@@ -1,210 +1,198 @@
+/* NotesPage.css - Add/modify these styles */
 .notes-page {
-
   display: flex;
-  
   height: 100vh;
-  
-  background-color: #1e1e1e; /* Fondo oscuro para el editor, similar a la estética de Obsidian */
-  
-  }
-  
-    
-  
-  .sidebar {
-  
-  background-color: #2d2d2d;
-  
-  padding: 15px;
-  
-  display: flex;
-  
-  flex-direction: column;
-  
-  overflow-y: auto;
-  
-  }
-  
-    
-    
-  
-  .sidebar-resizer {
-  
-  width: 3px;
-  
-  cursor: col-resize;
-  
-  background-color: #A41034;
-  
-  }
-  
-    
-  
-  .note-editor-container {
-  
-  flex-grow: 1;
-  
-  padding: 20px;
-  
-  background-color: #1e1e1e;
-  
-  color: #fff;
-  
-  overflow-y: auto;
-  
-  }
-  
-    
-  
-  .new-note-btn {
-  
-  background-color: #4caf50;
-  
-  color: white;
-  
-  border: none;
-  
-  padding: 10px;
-  
-  border-radius: 5px;
-  
-  cursor: pointer;
-  
-  margin-bottom: 20px;
-  
-  font-size: 1em;
-  
-  cursor: pointer;
-  
-  width: 100%;
-  
-  }
-  
-    
-  
-  .note-list {
-  
-  list-style-type: none;
-  
-  padding: 0;
-  
-  margin-top: 15px;
-  
-  }
-  
-    
-  
-  .note-item {
-  
-  padding: 10px;
-  
-  margin: 5px 0;
-  
-  cursor: pointer;
-  
-  background-color: #333;
-  
-  color: #fff;
-  
-  border-radius: 5px;
-  
-  transition: background-color 0.3s;
-  
-  }
-  
-    
-  
-  .note-item:hover {
-  
-  background-color: #555;
-  
-  }
-  
-    
-  
-  .note-editor-container {
-  
+  background-color: #1a1a1a;
+}
+
+
+.note-editor-container {
+  position: relative;
   flex: 1;
-  
-  padding: 20px;
-  
-  background-color: #1e1e1e;
-  
+  padding: 16px;
+}
+
+.empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #666;
+  font-style: italic;
+  font-size: 1.1rem;
+  text-align: center;
+  width: 100%;
+  line-height: 1.8;
+}
+
+
+.sidebar {
+  background: #252525;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+}
+
+.new-note-btn {
+  width: 92%;
+  margin: 1rem auto;
+  padding: 1rem;
+  background: linear-gradient(45deg, #4a9eff, #6c63ff);
+  border: none;
   color: white;
-  
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s;
+  border-radius: 6px;
+  display: block;
+}
+
+.notes-list {
+  flex: 1;
   overflow-y: auto;
-  
-  }
-  
-  .tabs-container {
-  
-  display: flex;
-  
-  border-bottom: 1px solid #444;
-  
-  background-color: #222;
-  
-  }
-  
-    
-  
-  /* Tabs styles */
-  
-  .tabs-container {
-  
-  display: flex;
-  
-  background-color: #222;
-  
-  border-bottom: 1px solid #444;
-  
-  }
-  
-    
-  
-  .tab {
-  
-  padding: 10px 20px;
-  
+  padding: 0.5rem;
+}
+
+.note-item {
+  padding: 0.8rem 1rem;
+  margin: 0.25rem 0;
   cursor: pointer;
-  
-  color: #ccc;
-  
-  font-size: 14px;
-  
-  border-bottom: 2px solid transparent;
-  
-  transition: all 0.2s ease;
-  
-  }
-  
-    
-  
-  .tab.active {
-  
-  color: #fff;
-  
-  border-bottom: 2px solid #4caf50;
-  
-  }
-  
-    
-  
-  .tab .close-tab {
-  
-  margin-left: 10px;
-  
-  color: #888;
-  
-  font-size: 14px;
-  
+  border-radius: 6px;
+  color: #ffffff;
+  transition: background-color 0.2s;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.note-item:hover {
+  background: #333;
+  opacity: 1;
+}
+
+.note-item.active {
+  background: #333;
+  border-left: 3px solid #4a9eff;
+  opacity: 1;
+}
+
+.user-bar {
+  padding: 1rem;
+  background: #2d2d2d;
+  border-top: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.sidebar-resizer {
+  width: 4px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: transparent;
+  cursor: col-resize;
+  transition: background-color 0.2s;
+}
+
+.sidebar-resizer:hover {
+  background: #4a9eff;
+}
+
+.user-name {
+  font-weight: 500;
+  background: linear-gradient(45deg, #4a9eff, #6c63ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logout-btn {
+  background: transparent;
+  border: none;
+  color: #666;
   cursor: pointer;
-  
-  }
-  
-    
-  
-  .tab .close-tab:hover {
-  
-  color: #fff;
-  
-  }
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #252525;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.confirm-btn {
+  padding: 0.8rem 1.5rem;
+  background: #ff4444;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  padding: 0.8rem 1.5rem;
+  background: transparent;
+  border: 2px solid #666;
+  border-radius: 8px;
+  color: #666;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-btn:hover {
+  background: #ff6666;
+  transform: translateY(-2px);
+}
+
+.cancel-btn:hover {
+  border-color: #999;
+  color: #999;
+  transform: translateY(-2px);
+}

@@ -11,7 +11,14 @@ function NotesPage() {
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const minWidth = 200; // Minimum sidebar width
+  const minWidth = 200;
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [username, setUsername] = useState('');
+
+  const handleLogout = () => {
+    // add logout logic here
+    //navigate('/login');
+  };
 
   const fetchNotes = async () => {
     setLoading(true);
@@ -48,6 +55,43 @@ function NotesPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const cookie = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('session_id='));
+        if (cookie) {
+          const username = cookie.split('=')[1];
+          setUsername(username);
+        }
+      } catch (error) {
+        console.error('Error fetching username:', error);
+      }
+    };
+  
+    fetchUsername();
+  }, []);
+
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsSidebarVisible((prev) => !prev);
+      }
+      // Add new shortcut for Ctrl+N
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        handleNewNote();
+      }
+    };
+  
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSelectNote = (note) => {
     setSelectedNote(note);
   };
@@ -79,20 +123,22 @@ function NotesPage() {
   if (loading) return <p>Loading notes...</p>;
   if (error) return <p>{error}</p>;
 
-  return (
-    <div className="notes-page">
-      <div
-        ref={sidebarRef}
-        className="sidebar"
-        style={{
-          width: isSidebarVisible ? `${sidebarWidth}px` : '0',
-          visibility: isSidebarVisible ? 'visible' : 'hidden',
-          transition: isDragging ? 'none' : 'width 0.3s ease, visibility 0.15s ease'
-        }}
-      >
-        <button className="new-note-btn" onClick={handleNewNote}>
-          + New Note
-        </button>
+// NotesPage.js - Modify the return section
+return (
+  <div className="notes-page">
+    <div
+      ref={sidebarRef}
+      className="sidebar"
+      style={{
+        width: isSidebarVisible ? `${sidebarWidth}px` : '0',
+        visibility: isSidebarVisible ? 'visible' : 'hidden',
+        transition: isDragging ? 'none' : 'width 0.3s ease, visibility 0.15s ease'
+      }}
+    >
+      <button className="new-note-btn" onClick={handleNewNote}>
+        + New Note
+      </button>
+      <div className="notes-list">
         {notes.map((note) => (
           <div
             key={note.id}
@@ -102,14 +148,25 @@ function NotesPage() {
             {note.title || 'Untitled'}
           </div>
         ))}
-        <div
-          className="sidebar-resizer"
-          onMouseDown={handleMouseDown}
-          style={{ cursor: 'col-resize' }}
-        />
+      </div>
+      <div className="user-bar">
+        <span className="user-name">{username || 'User'}</span>
+        <button 
+          className="logout-btn" 
+          onClick={() => setShowLogoutModal(true)}
+        >
+          <i className="fas fa-sign-out-alt"></i>
+        </button>
       </div>
 
-      <div 
+      <div
+        className="sidebar-resizer"
+        onMouseDown={handleMouseDown}
+        style={{ cursor: 'col-resize' }}
+      />
+    </div>
+
+    <div 
         className="note-editor-container" 
         style={{ 
           flex: 1,
@@ -119,11 +176,34 @@ function NotesPage() {
         {selectedNote ? (
           <NoteEditor note={selectedNote} onSave={fetchNotes} />
         ) : (
-          <p>Select or create a note to start editing.</p>
+          <div className="empty-state">
+            Select or create a new note to start editing or...<br/>
+            <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+              Create a new note using (Ctrl + O)
+            </span>
+          </div>
         )}
       </div>
-    </div>
-  );
+    
+    {showLogoutModal && (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h3 className="modal-title">Are you sure you want to log out?</h3>
+          <div className="modal-actions">
+            <button className="cancel-btn" onClick={() => setShowLogoutModal(false)}>
+              Cancel
+            </button>
+            <button className="confirm-btn" onClick={handleLogout}>
+              Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
+
 }
 
 export default NotesPage;

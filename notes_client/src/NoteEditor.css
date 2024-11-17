@@ -1,68 +1,76 @@
 .note-editor {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  color: white;
-  padding: 20px;
+  color: #ffffff;
+  background: #1a1a1a;
 }
 
 .note-title {
-  font-size: 24px;
-  font-weight: bold;
+  width: 100%;
+  padding: 1rem 2rem;
   background: transparent;
   border: none;
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.note-title:focus {
   outline: none;
-  color: white;
-  margin-bottom: 10px;
-  padding: 5px;
-  border-bottom: 1px solid gray;
-  width: 100%;
+  color: #4a9eff;
+}
+
+.note-title::placeholder {
+  color: #666;
 }
 
 .note-content {
-  flex-grow: 1;
-  font-size: 16px;
+  flex: 1;
+  padding: 1rem 2rem;
   background: transparent;
-  outline: none;
-  color: white;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-  padding: 5px;
+  border: none;
+  color: #ffffff;
+  font-size: 1.1rem;
+  line-height: 1.6;
   min-height: 300px;
+}
+
+.note-content:focus {
+  outline: none;
 }
 
 .note-content:empty::before {
   content: 'Start writing your note...';
-  color: gray;
+  color: #666;
 }
 
-button {
-  background-color: #A41034;
-  color: white;
+.save-btn {
+  position: fixed;
+  top: 1.5rem;
+  right: 2rem;
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(45deg, #4a9eff, #6c63ff);
   border: none;
-  padding: 10px;
+  border-radius: 8px;
+  color: white; 
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 10px;
-  align-self: flex-end;
+  transition: all 0.2s;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.2);
 }
 
-button:disabled {
-  background-color: #6c757d;
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 158, 255, 0.3);
 }
 
-.save-message {
-  color: #A41034;
-  margin-top: 10px;
-}
-
-.sidebar button.new-note-btn {
-  width: 100%;
-  background-color: #A41034;
-  color: white;
-  font-size: 16px;
-  padding: 12px;
-  border: none;
-  margin-bottom: 10px;
-  cursor: pointer;
-  display: block;
+.save-btn:disabled {
+  background: #333;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
 }

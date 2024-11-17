@@ -145,13 +145,12 @@ onInput={(e) => {
 >
 
 </div>
-
-  
-
-<button onClick={handleSave} disabled={isSaving}>
-
-{isSaving ? 'Saving...': 'Save'}
-
+<button 
+  className="save-btn" 
+  onClick={handleSave} 
+  disabled={isSaving}
+>
+  {isSaving ? 'Saving...' : 'Save'}
 </button>
 
 {saveMessage && <div className='save-message'>{saveMessage}</div>}

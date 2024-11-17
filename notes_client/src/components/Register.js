@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Register.css';
 
 function Register() {
   const navigate = useNavigate();
@@ -52,53 +53,58 @@ function Register() {
   
 
   return (
-    <div>
-      <h2>User Register</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Username:
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-          />
-        </label>
-        <br />
-        <label>
-          Email:
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-        </label>
-        <br />
-        <label>
-          Password:
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-        </label>
-        <br />
-        <label>
-          Confirm Password:
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-        />
-        </label>
+    <div className="register-container">
+      <div className="register-card">
+        <h2 className="register-title">Create Account</h2>
+        <form onSubmit={handleSubmit} className="register-form">
+          <div className="form-group">
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Username"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Password"
+              required
+            />
+          </div>
 
-        <br />
-        <button type="submit">Register</button>
-      </form>
-      {message && <p>{message}</p>}
+          <div className="form-group">
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm Password"
+              required
+            />
+          </div>
+
+          <button type="submit" className="register-btn">Create Account</button>
+        </form>
+        {message && <p className={`message ${message.includes('Error') ? 'error' : 'success'}`}>{message}</p>}
+      </div>
     </div>
   );
 }
