@@ -21,6 +21,7 @@ func main() {
 
 	// configurar enrutador
 	r := routes.SetupRoutes()
+	r.Use(handlers.EnableCors)
 
 	// ruta protegida con middleware autenticacion
 	protected := r.PathPrefix("/notes").Subrouter()

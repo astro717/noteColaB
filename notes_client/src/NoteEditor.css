@@ -1,0 +1,68 @@
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: white;
+  padding: 20px;
+}
+
+.note-title {
+  font-size: 24px;
+  font-weight: bold;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  margin-bottom: 10px;
+  padding: 5px;
+  border-bottom: 1px solid gray;
+  width: 100%;
+}
+
+.note-content {
+  flex-grow: 1;
+  font-size: 16px;
+  background: transparent;
+  outline: none;
+  color: white;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  padding: 5px;
+  min-height: 300px;
+}
+
+.note-content:empty::before {
+  content: 'Start writing your note...';
+  color: gray;
+}
+
+button {
+  background-color: #A41034;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  margin-top: 10px;
+  align-self: flex-end;
+}
+
+button:disabled {
+  background-color: #6c757d;
+}
+
+.save-message {
+  color: #A41034;
+  margin-top: 10px;
+}
+
+.sidebar button.new-note-btn {
+  width: 100%;
+  background-color: #A41034;
+  color: white;
+  font-size: 16px;
+  padding: 12px;
+  border: none;
+  margin-bottom: 10px;
+  cursor: pointer;
+  display: block;
+}

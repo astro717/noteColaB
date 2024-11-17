@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 
+	"errors"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -70,4 +72,17 @@ func createTableNotes() error {
 		log.Println("Table 'Notes' created")
 	}
 	return nil
+}
+
+// GetUserIDBySession recibe el session_id y devuelve el user_id correspondiente
+func GetUserIDBySession(sessionID string) (int, error) {
+	var userID int
+	err := Db.QueryRow(`SELECT id FROM users WHERE username = ?`, sessionID).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, errors.New("user not found")
+		}
+		return 0, err
+	}
+	return userID, nil
 }

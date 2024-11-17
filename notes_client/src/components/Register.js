@@ -2,63 +2,103 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function Register() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
 
+  const [message, setMessage] = useState('');
+
+  // Manejar cambios en los campos del formulario
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // Función para manejar el envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage(''); // Limpiar mensajes previos
+
     try {
-      // Enviar datos a la API de registro
       const response = await fetch('http://localhost:8080/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
+        })
       });
-
+  
       if (response.ok) {
-        alert('Registered successfully!');
-        // Redirigir al login después del registro exitoso
-        navigate('/login');
+        setMessage('Registered successfully, you are now logged in!');
+        navigate('/notes');
+        // Redirigir al usuario a la página de notas después del registro
       } else {
-        alert('Error: Registration failed');
+        const errorData = await response.text();
+        setMessage(`Error in registration: ${errorData}`);
       }
     } catch (error) {
+      setMessage('Error in server. Try again later.');
       console.error('Error:', error);
-      alert('Error: Could not connect to the server');
     }
   };
+  
 
   return (
     <div>
-      <h2>Register</h2>
+      <h2>User Register</h2>
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          required
+        <label>
+          Username:
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+          />
+        </label>
+        <br />
+        <label>
+          Email:
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+          />
+        </label>
+        <br />
+        <label>
+          Password:
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+          />
+        </label>
+        <br />
+        <label>
+          Confirm Password:
+          <input
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
         />
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-        />
+        </label>
+
+        <br />
         <button type="submit">Register</button>
       </form>
+      {message && <p>{message}</p>}
     </div>
   );
 }

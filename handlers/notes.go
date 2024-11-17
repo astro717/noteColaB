@@ -7,6 +7,7 @@ import (
 )
 
 type Note struct {
+	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
@@ -20,9 +21,14 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := cookie.Value
+	userID, err := utils.GetUserIDBySession(cookie.Value)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
 	// aqui usamos query porque el user puede tener mas de una nota
-	rows, err := utils.Db.Query(`SELECT title, content FROM Notes WHERE user_id = ? `, userID)
+	rows, err := utils.Db.Query(`SELECT id, title, content FROM Notes WHERE user_id = ? `, userID)
 	if err != nil {
 		http.Error(w, "Error fetching your notes", http.StatusInternalServerError)
 		return
@@ -36,17 +42,23 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 	var notes []Note
 	for rows.Next() {
 		var note Note
-		if err := rows.Scan(&note.Title, &note.Content); err != nil {
+		if err := rows.Scan(&note.ID, &note.Title, &note.Content); err != nil {
 			http.Error(w, "Error scanning your notes", http.StatusInternalServerError)
 			return
 		}
 		notes = append(notes, note)
 	}
 
-	// convertimos a json y enviamos por compatibilidad con
-	// frontend en javascript
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Error reading your notes", http.StatusInternalServerError)
+		return
+	}
+
+	// convertimos a json y enviamos por compatibilidad con // frontend en javascript
 	w.Header().Set("Content-type", "application/json")
-	json.NewEncoder(w).Encode(notes)
+	if err := json.NewEncoder(w).Encode(notes); err != nil {
+		http.Error(w, "Error encoding notes to JSON", http.StatusInternalServerError)
+	}
 
 }
 
@@ -59,7 +71,12 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := cookie.Value
+	userID, err := utils.GetUserIDBySession(cookie.Value)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
 	var newNote Note
 	if err := json.NewDecoder(r.Body).Decode(&newNote); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
@@ -75,4 +92,42 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Note saved!"))
+}
+
+func UpdateNote(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := utils.GetUserIDBySession(cookie.Value)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	// decodificar la nota recibida
+	var updatedNote Note
+	if err := json.NewDecoder(r.Body).Decode(&updatedNote); err != nil {
+		http.Error(w, "invalid input", http.StatusBadRequest)
+		return
+	}
+
+	// verificar si la nota tiene un ID valido
+	if updatedNote.ID == "" {
+		http.Error(w, "Note ID required", http.StatusBadRequest)
+		return
+	}
+
+	// actualizar la note en la DB
+	_, err = utils.Db.Exec(`UPDATE Notes SET title = ?, content = ? WHERE id = ? AND user_id = ?`,
+		updatedNote.Title, updatedNote.Content, updatedNote.ID, userID)
+	if err != nil {
+		http.Error(w, "Error updating the note", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("note updated!"))
 }
