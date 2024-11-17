@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"noteColaB/utils"
+
+	"github.com/gorilla/mux"
 )
 
 type Note struct {
@@ -28,6 +30,7 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// aqui usamos query porque el user puede tener mas de una nota
+	notes := []Note{}
 	rows, err := utils.Db.Query(`SELECT id, title, content FROM Notes WHERE user_id = ? `, userID)
 	if err != nil {
 		http.Error(w, "Error fetching your notes", http.StatusInternalServerError)
@@ -38,8 +41,6 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 	// para optimizar el rendimiento
 	defer rows.Close()
 
-	// creamos lista de notas
-	var notes []Note
 	for rows.Next() {
 		var note Note
 		if err := rows.Scan(&note.ID, &note.Title, &note.Content); err != nil {
@@ -107,27 +108,66 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// decodificar la nota recibida
+	vars := mux.Vars(r)
+	noteID := vars["id"]
+
 	var updatedNote Note
 	if err := json.NewDecoder(r.Body).Decode(&updatedNote); err != nil {
-		http.Error(w, "invalid input", http.StatusBadRequest)
+		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
-	// verificar si la nota tiene un ID valido
-	if updatedNote.ID == "" {
-		http.Error(w, "Note ID required", http.StatusBadRequest)
+	// Verify note ownership before updating
+	var count int
+	err = utils.Db.QueryRow(`SELECT COUNT(*) FROM Notes WHERE id = ? AND user_id = ?`,
+		noteID, userID).Scan(&count)
+	if err != nil || count == 0 {
+		http.Error(w, "Note not found or unauthorized", http.StatusNotFound)
 		return
 	}
 
-	// actualizar la note en la DB
 	_, err = utils.Db.Exec(`UPDATE Notes SET title = ?, content = ? WHERE id = ? AND user_id = ?`,
-		updatedNote.Title, updatedNote.Content, updatedNote.ID, userID)
+		updatedNote.Title, updatedNote.Content, noteID, userID)
 	if err != nil {
-		http.Error(w, "Error updating the note", http.StatusInternalServerError)
+		http.Error(w, "Error updating note", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("note updated!"))
+	json.NewEncoder(w).Encode(updatedNote)
+}
+
+func DeleteNote(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := utils.GetUserIDBySession(cookie.Value)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	noteID := vars["id"]
+
+	// Verify note ownership before deleting
+	var count int
+	err = utils.Db.QueryRow(`SELECT COUNT (*) FROM Notes WHERE id = ? AND user_id = ?`,
+		noteID, userID).Scan(&count)
+	if err != nil || count == 0 {
+		http.Error(w, "Note not found or unauthorized", http.StatusNotFound)
+		return
+	}
+
+	_, err = utils.Db.Exec(`DELETE FROM Notes WHERE id = ? AND user_id = ?`,
+		noteID, userID)
+	if err != nil {
+		http.Error(w, "Error deleting note", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

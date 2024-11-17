@@ -30,6 +30,7 @@ function Register() {
       const response = await fetch('http://localhost:8080/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           username: formData.username,
           email: formData.email,
@@ -38,6 +39,7 @@ function Register() {
       });
   
       if (response.ok) {
+        document.cookie = `session_id=${formData.username};path=/`;
         setMessage('Registered successfully, you are now logged in!');
         navigate('/notes');
         // Redirigir al usuario a la página de notas después del registro

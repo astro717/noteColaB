@@ -28,6 +28,8 @@ func main() {
 	protected.Use(middleware.AuthMiddleware)
 	protected.HandleFunc("/", handlers.GetNotes).Methods("GET")
 	protected.HandleFunc("/", handlers.CreateNote).Methods("POST")
+	protected.HandleFunc("/{id}", handlers.UpdateNote).Methods("PUT")
+	protected.HandleFunc("/{id}", handlers.DeleteNote).Methods("DELETE")
 
 	log.Println("Servidor iniciado en http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

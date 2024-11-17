@@ -196,3 +196,72 @@
   color: #999;
   transform: translateY(-2px);
 }
+
+.user-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.shortcuts-btn {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.shortcuts-btn:hover {
+  color: #4a9eff;
+  background: rgba(74, 158, 255, 0.1);
+}
+
+.shortcuts-modal {
+  position: relative;
+  max-width: 500px;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-modal-btn:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.shortcut-key {
+  background: #333;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #4a9eff;
+}
+
+.shortcut-desc {
+  color: #999;
+}

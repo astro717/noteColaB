@@ -74,3 +74,28 @@
   box-shadow: none;
   cursor: not-allowed;
 }
+
+.editor-actions {
+  position: fixed;
+  top: 1.5rem;
+  right: 2rem;
+  display: flex;
+  gap: 1rem;
+  z-index: 10;
+}
+
+.delete-btn {
+  padding: 0.8rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+  transform: translateY(-2px);
+}

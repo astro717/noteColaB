@@ -14,6 +14,7 @@ function NotesPage() {
   const minWidth = 200;
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [username, setUsername] = useState('');
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const handleLogout = () => {
     // add logout logic here
@@ -30,10 +31,11 @@ function NotesPage() {
       });
       if (!response.ok) throw new Error('Error fetching notes');
       const data = await response.json();
-      setNotes(data);
+      setNotes(data || []);
     } catch (error) {
       console.error('Error fetching notes:', error);
       setError('Error fetching the notes');
+      setNotes([]);
     } finally {
       setLoading(false);
     }
@@ -41,18 +43,6 @@ function NotesPage() {
 
   useEffect(() => {
     fetchNotes();
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-        e.preventDefault();
-        setIsSidebarVisible((prev) => !prev);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
 
@@ -139,7 +129,7 @@ return (
         + New Note
       </button>
       <div className="notes-list">
-        {notes.map((note) => (
+        {notes?.map((note) => (  // Add optional chaining
           <div
             key={note.id}
             className={`note-item ${selectedNote?.id === note.id ? 'active' : ''}`}
@@ -149,8 +139,17 @@ return (
           </div>
         ))}
       </div>
+
       <div className="user-bar">
-        <span className="user-name">{username || 'User'}</span>
+        <div className="user-bar-left">
+          <button 
+            className="shortcuts-btn" 
+            onClick={() => setShowShortcutsModal(true)}
+          >
+            <i className="fas fa-keyboard"></i>
+          </button>
+          <span className="user-name">{username || 'User'}</span>
+        </div>
         <button 
           className="logout-btn" 
           onClick={() => setShowLogoutModal(true)}
@@ -167,23 +166,23 @@ return (
     </div>
 
     <div 
-        className="note-editor-container" 
-        style={{ 
-          flex: 1,
-          padding: '16px',
-        }}
-      >
-        {selectedNote ? (
-          <NoteEditor note={selectedNote} onSave={fetchNotes} />
-        ) : (
-          <div className="empty-state">
-            Select or create a new note to start editing or...<br/>
-            <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>
-              Create a new note using (Ctrl + O)
-            </span>
-          </div>
-        )}
-      </div>
+      className="note-editor-container" 
+      style={{ 
+        flex: 1,
+        padding: '16px',
+      }}
+    >
+      {selectedNote ? (
+        <NoteEditor note={selectedNote} onSave={fetchNotes} />
+      ) : (
+        <div className="empty-state">
+          Select or create a new note to start editing or...<br/>
+          <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+            Create a new note using (Ctrl + O)
+          </span>
+        </div>
+      )}
+    </div>
     
     {showLogoutModal && (
       <div className="modal-overlay">
@@ -200,10 +199,32 @@ return (
         </div>
       </div>
     )}
+
+    {showShortcutsModal && (
+      <div className="modal-overlay">
+        <div className="modal-content shortcuts-modal">
+          <button 
+            className="close-modal-btn"
+            onClick={() => setShowShortcutsModal(false)}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+          <h3 className="modal-title">Keyboard Shortcuts</h3>
+          <div className="shortcuts-list">
+            <div className="shortcut-item">
+              <span className="shortcut-key">Ctrl + B</span>
+              <span className="shortcut-desc">Toggle Sidebar</span>
+            </div>
+            <div className="shortcut-item">
+              <span className="shortcut-key">Ctrl + O</span>
+              <span className="shortcut-desc">New Note</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   </div>
 );
-
-
 }
 
 export default NotesPage;
