@@ -9,7 +9,7 @@ function NoteEditor({ note, onSave }) {
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
     const contentRef = useRef(null);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    
 
   
   
@@ -27,25 +27,6 @@ contentRef.current.textContent = note ? note.content: '';
 }, [note]);
 
   
-const handleDelete = async () => {
-    try {
-      const response = await fetch(`http://localhost:8080/notes/${note.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error deleting note');
-      }
-
-      // Call onSave to refresh notes list
-      onSave();
-      setShowDeleteModal(false);
-    } catch (error) {
-      console.error('Error deleting note:', error);
-    }
-  };
-
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -55,7 +36,7 @@ const handleDelete = async () => {
         const method = note?.id ? 'PUT' : 'POST';
         const url = note?.id
             ? `http://localhost:8080/notes/${note.id}`
-            : 'http://localhost:8080/notes';
+            : 'http://localhost:8080/notes/';
 
         const response = await fetch(url, {
             method,
@@ -108,12 +89,6 @@ return (
       
       <div className="editor-actions">
         <button 
-          className="delete-btn" 
-          onClick={() => setShowDeleteModal(true)}
-        >
-          <i className="fas fa-trash"></i>
-        </button>
-        <button 
           className="save-btn" 
           onClick={handleSave} 
           disabled={isSaving}
@@ -122,28 +97,6 @@ return (
         </button>
       </div>
   
-      {showDeleteModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">Delete Note?</h3>
-            <p className="modal-text">This action cannot be undone.</p>
-            <div className="modal-actions">
-              <button 
-                className="cancel-btn" 
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="confirm-btn" 
-                onClick={handleDelete}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

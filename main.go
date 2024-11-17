@@ -26,10 +26,10 @@ func main() {
 	// ruta protegida con middleware autenticacion
 	protected := r.PathPrefix("/notes").Subrouter()
 	protected.Use(middleware.AuthMiddleware)
-	protected.HandleFunc("/", handlers.GetNotes).Methods("GET")
-	protected.HandleFunc("/", handlers.CreateNote).Methods("POST")
-	protected.HandleFunc("/{id}", handlers.UpdateNote).Methods("PUT")
-	protected.HandleFunc("/{id}", handlers.DeleteNote).Methods("DELETE")
+	protected.HandleFunc("/", handlers.GetNotes).Methods("GET", "OPTIONS")
+	protected.HandleFunc("/", handlers.CreateNote).Methods("POST", "OPTIONS")
+	protected.HandleFunc("/{id}", handlers.UpdateNote).Methods("PUT", "OPTIONS")
+	protected.HandleFunc("/{id}", handlers.DeleteNote).Methods("DELETE", "OPTIONS")
 
 	log.Println("Servidor iniciado en http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

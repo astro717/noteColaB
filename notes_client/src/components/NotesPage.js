@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import NoteEditor from './NoteEditor';
 import '../NotesPage.css';
+import { useNavigate } from 'react-router-dom';
 
 function NotesPage() {
   const [notes, setNotes] = useState([]);
@@ -15,18 +16,33 @@ function NotesPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [username, setUsername] = useState('');
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [activeNoteMenu, setActiveNoteMenu] = useState(null);
+  const [noteToDelete, setNoteToDelete] = useState(null);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    // add logout logic here
-    //navigate('/login');
+    try {
+      document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setUsername('');
+      setNotes([]);
+      setSelectedNote(null);
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
+  const handleNoteOptions = (e, noteId) => {
+    e.stopPropagation();
+    setActiveNoteMenu(activeNoteMenu === noteId ? null : noteId);
+  };
+  
   const fetchNotes = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8080/notes', {
+      const response = await fetch('http://localhost:8080/notes/', {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Error fetching notes');
@@ -40,10 +56,39 @@ function NotesPage() {
       setLoading(false);
     }
   };
+  const handleDeleteNote = async (noteId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/notes/${noteId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+        
+      if (!response.ok) {
+        throw new Error('Error deleting note');
+      }
+  
+      // Actualizar estado de forma atómica
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+      setSelectedNote(prev => prev?.id === noteId ? null : prev);
+      setNoteToDelete(null);
+      setActiveNoteMenu(null);
+  
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      setError('Error deleting note'); // Añadir manejo de error visual
+    }
+  };
 
   useEffect(() => {
-    fetchNotes();
-  }, []);
+    const initializeNotes = async () => {
+      if (!username) return; // Solo cargar notas si hay usuario
+      await fetchNotes();
+    };
+    initializeNotes();
+  }, [username]); 
 
 
   useEffect(() => {
@@ -113,7 +158,8 @@ function NotesPage() {
   if (loading) return <p>Loading notes...</p>;
   if (error) return <p>{error}</p>;
 
-// NotesPage.js - Modify the return section
+
+  // NotesPage.js - Modify the return section
 return (
   <div className="notes-page">
     <div
@@ -135,7 +181,28 @@ return (
             className={`note-item ${selectedNote?.id === note.id ? 'active' : ''}`}
             onClick={() => handleSelectNote(note)}
           >
-            {note.title || 'Untitled'}
+          <span>{note.title || 'Untitled'}</span>
+            <button 
+              className="note-options-btn"
+              onClick={(e) => handleNoteOptions(e, note.id)}
+            >
+              <i className="fas fa-ellipsis-v"></i>
+            </button>
+            {activeNoteMenu === note.id && (
+              <div className="note-options-menu">
+                <div 
+                  className="note-option delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNoteToDelete(note);
+                    setActiveNoteMenu(null);
+                  }}
+                >
+                  <i className="fas fa-trash"></i>
+                  Delete
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -194,6 +261,29 @@ return (
             </button>
             <button className="confirm-btn" onClick={handleLogout}>
               Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {noteToDelete && (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h3 className="modal-title">Delete Note?</h3>
+          <p className="modal-text">This action cannot be undone.</p>
+          <div className="modal-actions">
+            <button 
+              className="cancel-btn" 
+              onClick={() => setNoteToDelete(null)}
+            >
+              Cancel
+            </button>
+            <button 
+              className="confirm-btn"
+              onClick={() => handleDeleteNote(noteToDelete.id)}
+            >
+              Delete
             </button>
           </div>
         </div>

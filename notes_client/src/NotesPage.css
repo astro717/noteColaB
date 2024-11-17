@@ -65,6 +65,10 @@
   transition: background-color 0.2s;
   font-size: 0.9rem;
   opacity: 0.8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
 }
 
 .note-item:hover {
@@ -76,6 +80,60 @@
   background: #333;
   border-left: 3px solid #4a9eff;
   opacity: 1;
+}
+
+.note-options-btn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: #666;
+  padding: 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.note-options-btn {
+  opacity: 1;
+}
+
+.note-options-btn:hover {
+  color: #4a9eff;
+  background: rgba(74, 158, 255, 0.1);
+}
+
+.note-options-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #252525;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  min-width: 150px;
+  overflow: hidden;
+}
+
+.note-option {
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.note-option:hover {
+  background: #333;
+}
+
+.note-option.delete {
+  color: #ff4444;
+}
+
+.note-option.delete:hover {
+  background: rgba(255, 68, 68, 0.1);
 }
 
 .user-bar {
