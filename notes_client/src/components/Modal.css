@@ -1,0 +1,29 @@
+@media (max-width: 768px) {
+    .modal-content {
+        width: 90%;
+        padding: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+    }
+
+    .modal-text {
+        font-size: 1rem;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-actions button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .close-modal-btn {
+        top: 10px;
+        right: 10px;
+        font-size: 1.2rem;
+    }
+}

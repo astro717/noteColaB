@@ -86,3 +86,27 @@
     background: rgba(74, 158, 255, 0.1);
     transform: translateY(-2px);
   }
+
+  @media (max-width: 768px) {
+    .login-container,
+    .register-container {
+        padding: 20px;
+    }
+
+    .login-container input,
+    .register-container input {
+        width: 100%;
+        font-size: 1rem;
+    }
+
+    .login-container button,
+    .register-container button {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .form-title {
+        font-size: 1.5rem;
+    }
+}

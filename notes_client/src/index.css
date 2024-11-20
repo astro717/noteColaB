@@ -35,3 +35,23 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #4a9eff;
 }
+
+@media (max-width: 768px) {
+    body {
+        margin: 0;
+        font-size: 16px;
+    }
+
+    button {
+        font-size: 1rem;
+    }
+
+    /* Ajustes para títulos y textos generales */
+    h1, h2, h3, h4, h5, h6 {
+        font-size: 1.2rem;
+    }
+
+    p {
+        font-size: 1rem;
+    }
+}
