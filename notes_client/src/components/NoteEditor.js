@@ -9,10 +9,10 @@ function NoteEditor({ note, onSave }) {
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
     const contentRef = useRef(null);
+    const wsRef = useRef(null);
+    const isUpdatingRef = useRef(false);
     
 
-  
-  
 
 useEffect(() => {
 
@@ -24,7 +24,57 @@ contentRef.current.textContent = note ? note.content: '';
 
 }
 
+// close last connection if it exists
+if (wsRef.current) {
+    wsRef.current.close();
+}
+
+if (note && note.id) {
+  const ws = new WebSocket(`ws://localhost:8080/notes/ws/${note.id}`);
+  wsRef.current = ws;
+
+  ws.onopen = () => {
+    console.log('WebSocket conectado');
+  };
+
+  ws.onmessage = (event) => {
+    const updatedContent = event.data;
+    if (contentRef.current && !isUpdatingRef.current) {
+      isUpdatingRef.current = true;
+      contentRef.current.textContent = updatedContent;
+      isUpdatingRef.current = false;
+    }
+  };
+
+  ws.onclose = () => {
+    console.log('WebSocket cerrado');
+  };
+
+  ws.onerror = (error) => {
+    console.error('Error en WebSocket:', error);
+  };
+}
+
+  return () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+  };
+
 }, [note]);
+
+// Enviar contenido al servidor al cambiar
+const handleInput = (e) => {
+  const newContent = e.currentTarget.textContent;
+  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && !isUpdatingRef.current) {
+    wsRef.current.send(newContent);
+  }
+};
+
+// Actualizar título
+const handleTitleChange = (e) => {
+  setTitle(e.target.value);
+};
 
   
 
@@ -72,7 +122,8 @@ return (
       <input
         type="text"
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={handleTitleChange}
+        //onChange={(e) => setTitle(e.target.value)}
         placeholder="Untitled"
         className='note-title'
       />
@@ -81,10 +132,8 @@ return (
         contentEditable
         suppressContentEditableWarning
         ref={contentRef}
-        onInput={(e) => {
-          // const newContent = e.currentTarget.textContent || '';
-          // setContent(newContent);
-        }}
+        onInput={handleInput}
+        //onInput={(e) => {}}
       />
       
       <div className="editor-actions">

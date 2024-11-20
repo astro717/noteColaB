@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"noteColaB/utils"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -170,4 +171,35 @@ func DeleteNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func AddCollaboratorHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	noteIdStr := vars["noteID"]
+	noteID, err := strconv.Atoi(noteIdStr)
+	if err != nil {
+		http.Error(w, "Invalid note ID", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Username string `json:"username"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	err = utils.AddCollaborator(noteID, req.Username)
+	if err != nil {
+		if err.Error() == "user not found" {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Error adding collaborator", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Collaborator added!"))
 }

@@ -22,7 +22,9 @@ function NotesPage() {
   const navigate = useNavigate();
   // para la version movil
   const [isMobileSidebarVisible, setIsMobileSidebarVisible] = useState(false);
-
+  const [showCollaborateModal, setShowCollaborateModal] = useState(false);
+  const [collaboratorUsername, setCollaboratorUsername] = useState('');
+  const [collaborateError, setCollaborateError] = useState('');
 
   const isMobile = window.innerWidth <= 768;
 
@@ -87,6 +89,7 @@ function NotesPage() {
       setError('Error deleting note'); // Añadir manejo de error visual
     }
   };
+
 
   useEffect(() => {
     const initializeNotes = async () => {
@@ -165,185 +168,231 @@ function NotesPage() {
   if (error) return <p>{error}</p>;
 
 
+  const handleCollaborate = async (noteId) => {
+    if (!selectedNote) {
+      setCollaborateError('No note selected');
+      return;
+    }
 
-return (
-  <>
-    {/* Botón de menú móvil */}
-    {isMobile && (
-      <button
-        className="mobile-menu-btn"
-        onClick={() => setIsMobileSidebarVisible(!isMobileSidebarVisible)}
-      >
-        <i className="fas fa-bars"></i>
-      </button>
-    )}
+    try {
+      const response = await fetch(`http://localhost:8080/notes/${noteId}/collaborators`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ username: collaboratorUsername }),
+      });
+      if (response.ok) {
+        setShowCollaborateModal(false);
+        setCollaboratorUsername('');
+        setCollaborateError('');
+      } else {
+        const errorText = await response.text();
+        setCollaborateError(errorText);
+      } 
+    } catch (error) {
+      setCollaborateError('Error adding collaborator. Please try again.');
+    }
+  };
 
-    <div className="notes-page">
-      {/* Sidebar */}
-      <div
-        ref={sidebarRef}
-        className={`sidebar ${isMobile && isMobileSidebarVisible ? 'visible' : ''}`}
-        style={{
-          width: isSidebarVisible ? `${sidebarWidth}px` : '0',
-          visibility: isSidebarVisible ? 'visible' : 'hidden',
-          transition: isDragging ? 'none' : 'width 0.3s ease, visibility 0.15s ease',
-        }}
-      >
-        <button className="new-note-btn" onClick={handleNewNote}>
-          + New Note
-        </button>
-        <div className="notes-list">
-          {notes?.map((note) => (
-            <div
-              key={note.id}
-              className={`note-item ${selectedNote?.id === note.id ? 'active' : ''}`}
-              onClick={() => handleSelectNote(note)}
-            >
-              <span>{note.title || 'Untitled'}</span>
-              <button
-                className="note-options-btn"
-                onClick={(e) => handleNoteOptions(e, note.id)}
-              >
-                <i className="fas fa-ellipsis-v"></i>
-              </button>
-              {activeNoteMenu === note.id && (
-                <div className="note-options-menu">
-                  <div
-                    className="note-option delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setNoteToDelete(note);
-                      setActiveNoteMenu(null);
-                    }}
-                  >
-                    <i className="fas fa-trash"></i>
-                    Delete
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="user-bar">
-          <div className="user-bar-left">
-            <button
-              className="shortcuts-btn"
-              onClick={() => setShowShortcutsModal(true)}
-            >
-              <i className="fas fa-keyboard"></i>
-            </button>
-            <span className="user-name">{username || 'User'}</span>
-          </div>
-          <button
-            className="logout-btn"
-            onClick={() => setShowLogoutModal(true)}
-          >
-            <i className="fas fa-sign-out-alt"></i>
+  
+    return (
+      <div className="notes-page">
+        {/* Sidebar and other components... */}
+        <div
+          ref={sidebarRef}
+          className={`sidebar ${isMobile && isMobileSidebarVisible ? 'visible' : ''}`}
+          style={{
+            width: isSidebarVisible ? `${sidebarWidth}px` : '0',
+            visibility: isSidebarVisible ? 'visible' : 'hidden',
+            transition: isDragging ? 'none' : 'width 0.3s ease, visibility 0.15s ease',
+          }}
+        >
+          <button className="new-note-btn" onClick={handleNewNote}>
+            + New Note
           </button>
+          <div className="notes-list">
+            {notes?.map((note) => (
+              <div
+                key={note.id}
+                className={`note-item ${selectedNote?.id === note.id ? 'active' : ''}`}
+                onClick={() => handleSelectNote(note)}
+              >
+                <span>{note.title || 'Untitled'}</span>
+                <button
+                  className="note-options-btn"
+                  onClick={(e) => handleNoteOptions(e, note.id)}
+                >
+                  <i className="fas fa-ellipsis-v"></i>
+                </button>
+                {activeNoteMenu === note.id && (
+                  <div className="note-options-menu">
+                    <div
+                      className="note-option delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNoteToDelete(note);
+                        setActiveNoteMenu(null);
+                      }}
+                    >
+                      <i className="fas fa-trash"></i>
+                      Delete
+                    </div>
+                    <div
+                      className="note-option collaborate"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowCollaborateModal(true);
+                        setActiveNoteMenu(null);
+                      }}
+                    >
+                      <i className="fas fa-user-plus"></i>
+                      Collaborate
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="user-bar">
+            <div className="user-bar-left">
+              <button
+                className="shortcuts-btn"
+                onClick={() => setShowShortcutsModal(true)}
+              >
+                <i className="fas fa-keyboard"></i>
+              </button>
+              <span className="user-name">{username || 'User'}</span>
+            </div>
+            <button
+              className="logout-btn"
+              onClick={() => setShowLogoutModal(true)}
+            >
+              <i className="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+          <div
+            className="sidebar-resizer"
+            onMouseDown={handleMouseDown}
+            style={{ cursor: 'col-resize' }}
+          />
         </div>
-
-        {/* Resizador de la sidebar */}
+  
+        {/* Overlay para móviles */}
+        {isMobile && isMobileSidebarVisible && (
+          <div
+            className="sidebar-overlay"
+            onClick={() => setIsMobileSidebarVisible(false)}
+          ></div>
+        )}
+  
+        {/* Contenido principal */}
         <div
-          className="sidebar-resizer"
-          onMouseDown={handleMouseDown}
-          style={{ cursor: 'col-resize' }}
-        />
-      </div>
-
-      {/* Overlay para móviles */}
-      {isMobile && isMobileSidebarVisible && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setIsMobileSidebarVisible(false)}
-        ></div>
-      )}
-
-      {/* Contenido principal */}
-      <div
-        className="note-editor-container"
-        style={{
-          flex: 1,
-          padding: '16px',
-        }}
-      >
-        {selectedNote ? (
-          <NoteEditor note={selectedNote} onSave={fetchNotes} />
-        ) : (
-          <div className="empty-state">
-            Select or create a new note to start editing or...<br />
-            <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>
-              Create a new note using (Ctrl + O)
-            </span>
+          className="note-editor-container"
+          style={{
+            flex: 1,
+            padding: '16px',
+          }}
+        >
+          {selectedNote ? (
+            <NoteEditor note={selectedNote} onSave={fetchNotes} />
+          ) : (
+            <div className="empty-state">
+              Select or create a new note to start editing or...<br />
+              <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+                Create a new note using (Ctrl + O)
+              </span>
+            </div>
+          )}
+        </div>
+  
+        {/* Modales */}
+        {noteToDelete && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3 className="modal-title">Delete Note?</h3>
+              <p className="modal-text">This action cannot be undone.</p>
+              <div className="modal-actions">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setNoteToDelete(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="confirm-btn"
+                  onClick={() => handleDeleteNote(noteToDelete.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
-      </div>
+        {showLogoutModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3 className="modal-title">Are you sure you want to log out?</h3>
+              <div className="modal-actions">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setShowLogoutModal(false)}
+                >
+                  Cancel
+                </button>
+                <button className="confirm-btn" onClick={handleLogout}>
+                  Log Out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showShortcutsModal && (
+          <div className="modal-overlay">
+            <div className="modal-content shortcuts-modal">
+              <button
+                className="close-modal-btn"
+                onClick={() => setShowShortcutsModal(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+              <h3 className="modal-title">Keyboard Shortcuts</h3>
+              <div className="shortcuts-list">
+                <div className="shortcut-item">
+                  <span className="shortcut-key">Ctrl + B</span>
+                  <span className="shortcut-desc">Toggle Sidebar</span>
+                </div>
+                <div className="shortcut-item">
+                  <span className="shortcut-key">Ctrl + O</span>
+                  <span className="shortcut-desc">New Note</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showCollaborateModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Add Collaborator</h3>
+            <div className="form-group">
+              <input
+                type="text"
+                value={collaboratorUsername}
+                onChange={(e) => setCollaboratorUsername(e.target.value)}
+                placeholder="Enter username to ColaB"
+              />
+              {collaborateError && <p className="error-message">{collaborateError}</p>}
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowCollaborateModal(false)}>Cancel</button>
+              <button className="add-btn" onClick={() => handleCollaborate(selectedNote.id)}>Add</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-
-    {/* Modales */}
-    {noteToDelete && (
-      <div className="modal-overlay">
-        <div className="modal-content">
-          <h3 className="modal-title">Delete Note?</h3>
-          <p className="modal-text">This action cannot be undone.</p>
-          <div className="modal-actions">
-            <button
-              className="cancel-btn"
-              onClick={() => setNoteToDelete(null)}
-            >
-              Cancel
-            </button>
-            <button
-              className="confirm-btn"
-              onClick={() => handleDeleteNote(noteToDelete.id)}
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-    {showLogoutModal && (
-      <div className="modal-overlay">
-        <div className="modal-content">
-          <h3 className="modal-title">Are you sure you want to log out?</h3>
-          <div className="modal-actions">
-            <button
-              className="cancel-btn"
-              onClick={() => setShowLogoutModal(false)}
-            >
-              Cancel
-            </button>
-            <button className="confirm-btn" onClick={handleLogout}>
-              Log Out
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-    {showShortcutsModal && (
-      <div className="modal-overlay">
-        <div className="modal-content shortcuts-modal">
-          <button
-            className="close-modal-btn"
-            onClick={() => setShowShortcutsModal(false)}
-          >
-            <i className="fas fa-times"></i>
-          </button>
-          <h3 className="modal-title">Keyboard Shortcuts</h3>
-          <div className="shortcuts-list">
-            <div className="shortcut-item">
-              <span className="shortcut-key">Ctrl + B</span>
-              <span className="shortcut-desc">Toggle Sidebar</span>
-            </div>
-            <div className="shortcut-item">
-              <span className="shortcut-key">Ctrl + O</span>
-              <span className="shortcut-desc">New Note</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-  </>
-);
+  );
 }
-export default NotesPage;
+  
+  export default NotesPage;

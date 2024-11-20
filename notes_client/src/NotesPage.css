@@ -222,6 +222,28 @@
   margin-top: 1.5rem;
 }
 
+.modal-content {
+  background: #252525;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
 .confirm-btn {
   padding: 0.8rem 1.5rem;
   background: #ff4444;
@@ -254,6 +276,56 @@
   color: #999;
   transform: translateY(-2px);
 }
+
+.add-btn {
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(45deg, #4a9eff, #6c63ff);
+  border: none;
+  border-radius: 8px;
+  color: white; 
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.2);
+}
+
+.add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 158, 255, 0.3);
+}
+
+
+
+
+.ColaB-card {
+  background: #252525;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #4a9eff;
+  outline: none;
+}
+
+
 
 .user-bar-left {
   display: flex;
