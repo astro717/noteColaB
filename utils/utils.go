@@ -80,8 +80,8 @@ func createTableNotes() error {
 
 func createTableNoteCollaborators() error {
 	createTableNoteCollaborators := `CREATE TABLE IF NOT EXISTS NoteCollaborators(
-		note_id INTEGER,
-		user_id INTEGER,
+		note_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
 		FOREIGN KEY(note_id) REFERENCES Notes(id),
 		FOREIGN KEY(user_id) REFERENCES users(id),
 		PRIMARY KEY (note_id, user_id)
@@ -166,4 +166,22 @@ func AddCollaborator(noteID int, username string) error {
 		return err
 	}
 	return nil
+}
+
+func GetUserIDByUsername(username string) (int, error) {
+	db := GetDB()
+	var userID int
+	err := db.QueryRow("SELECT id FROM users WHERE username = ?", username).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, errors.New("user not found")
+		}
+		return 0, err
+	}
+	return userID, nil
+}
+
+func AddCollaboratorToNote(noteID int, collaboratorID int) error {
+	_, err := Db.Exec("INSERT INTO NoteCollaborators (note_id, user_id) VALUES (?, ?)", noteID, collaboratorID)
+	return err
 }

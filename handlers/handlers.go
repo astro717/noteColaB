@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"noteColaB/middleware"
 	"noteColaB/utils"
 
 	"golang.org/x/crypto/bcrypt"
@@ -116,4 +117,23 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("user registeres succesfully"))
+}
+
+// GetUserIDHandler handles requests to retrieve the current user's ID
+func GetUserIDHandler(w http.ResponseWriter, r *http.Request) {
+	// Set response headers
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Content-Type", "application/json")
+
+	// Get user ID from the session
+	userID, err := middleware.GetUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Send the user ID as a JSON response
+	response := map[string]int{"user_id": userID}
+	json.NewEncoder(w).Encode(response)
 }

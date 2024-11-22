@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import '../NoteEditor.css'
-
+import Collaborative 
   
 
 function NoteEditor({ note, onSave }) {
     const [title, setTitle] = useState(note ? note.title : '');
     const [isSaving, setIsSaving] = useState(false);
+    const [content, setContent] = useState(note ? note.content : '');
     const [saveMessage, setSaveMessage] = useState('');
     const contentRef = useRef(null);
     const wsRef = useRef(null);
@@ -17,6 +18,7 @@ function NoteEditor({ note, onSave }) {
 useEffect(() => {
 
 setTitle(note ? note.title: '');
+setContent(note ? note.content: '');
 
 if (contentRef.current) {
 
@@ -39,9 +41,9 @@ if (note && note.id) {
 
   ws.onmessage = (event) => {
     const updatedContent = event.data;
-    if (contentRef.current && !isUpdatingRef.current) {
+    if (contentRef.current && updatedContent !== content) {
       isUpdatingRef.current = true;
-      contentRef.current.textContent = updatedContent;
+      setContent(updatedContent);
       isUpdatingRef.current = false;
     }
   };
@@ -63,9 +65,32 @@ if (note && note.id) {
 
 }, [note]);
 
+useEffect(() => {
+  if (contentRef.current && !isUpdatingRef.current) {
+    if (contentRef.current.innerText !== content) {
+      isUpdatingRef.current = true;
+      const selection = window.getSelection();
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null; 
+      const pos = range.startOffset;
+
+      contentRef.current.innerText = content;
+
+      if (range) {
+        const restoredRange = document.createRange();
+        restoredRange.setStart(contentRef.current.firstChild || contentRef.current, range.startOffset);
+        restoredRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(restoredRange);
+      }
+      isUpdatingRef.current = false;
+    }
+  }
+}, [content]);
+
 // Enviar contenido al servidor al cambiar
 const handleInput = (e) => {
-  const newContent = e.currentTarget.textContent;
+  const newContent = e.currentTarget.innerText;
+  setContent(newContent);
   if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && !isUpdatingRef.current) {
     wsRef.current.send(newContent);
   }

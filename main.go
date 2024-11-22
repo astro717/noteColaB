@@ -45,6 +45,7 @@ func main() {
 	protected.HandleFunc("/{id}", handlers.DeleteNote).Methods("DELETE", "OPTIONS")
 	protected.HandleFunc("/ws/{noteID}", handleWebSocket).Methods("GET", "OPTIONS")
 	protected.HandleFunc("/{noteID}/collaborators", handlers.AddCollaboratorHandler).Methods("POST", "OPTIONS")
+	protected.HandleFunc("/getUserID", handlers.GetUserIDHandler).Methods("GET", "OPTIONS")
 
 	log.Println("Servidor iniciado en http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

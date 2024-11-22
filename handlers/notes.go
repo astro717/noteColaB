@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"noteColaB/middleware"
 	"noteColaB/utils"
 	"strconv"
 
@@ -10,9 +12,11 @@ import (
 )
 
 type Note struct {
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	ID               int    `json:"id"`
+	Title            string `json:"title"`
+	Content          string `json:"content"`
+	UserID           int    `json:"user_id"`
+	HasCollaborators bool   `json:"has_collaborators"`
 }
 
 func GetNotes(w http.ResponseWriter, r *http.Request) {
@@ -21,20 +25,31 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		http.Error(w, "user not authenticated", http.StatusUnauthorized)
+		log.Println("Error getting cookie", err)
 		return
 	}
 
 	userID, err := utils.GetUserIDBySession(cookie.Value)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusUnauthorized)
+		log.Println("Error getting user id", err)
 		return
 	}
 
 	// aqui usamos query porque el user puede tener mas de una nota
 	notes := []Note{}
-	rows, err := utils.Db.Query(`SELECT id, title, content FROM Notes WHERE user_id = ? `, userID)
+	rows, err := utils.Db.Query(`
+  		SELECT DISTINCT Notes.id, Notes.title, Notes.content, Notes.user_id,
+  		CASE WHEN EXISTS (
+    	SELECT 1 FROM NoteCollaborators WHERE note_id = Notes.id
+  		) THEN 1 ELSE 0 END AS has_collaborators
+  		FROM Notes
+  		LEFT JOIN NoteCollaborators ON Notes.id = NoteCollaborators.note_id
+  		WHERE Notes.user_id = ? OR NoteCollaborators.user_id = ?
+		`, userID, userID)
 	if err != nil {
 		http.Error(w, "Error fetching your notes", http.StatusInternalServerError)
+		log.Println("error in sql query", err)
 		return
 	}
 
@@ -44,8 +59,9 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var note Note
-		if err := rows.Scan(&note.ID, &note.Title, &note.Content); err != nil {
+		if err := rows.Scan(&note.ID, &note.Title, &note.Content, &note.UserID, &note.HasCollaborators); err != nil {
 			http.Error(w, "Error scanning your notes", http.StatusInternalServerError)
+			log.Println("error scanning rows", err)
 			return
 		}
 		notes = append(notes, note)
@@ -53,6 +69,7 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 
 	if err := rows.Err(); err != nil {
 		http.Error(w, "Error reading your notes", http.StatusInternalServerError)
+		log.Println("error reading rows", err)
 		return
 	}
 
@@ -60,6 +77,7 @@ func GetNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	if err := json.NewEncoder(w).Encode(notes); err != nil {
 		http.Error(w, "Error encoding notes to JSON", http.StatusInternalServerError)
+		log.Println("error coding json", err)
 	}
 
 }
@@ -120,8 +138,12 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 
 	// Verify note ownership before updating
 	var count int
-	err = utils.Db.QueryRow(`SELECT COUNT(*) FROM Notes WHERE id = ? AND user_id = ?`,
-		noteID, userID).Scan(&count)
+	err = utils.Db.QueryRow(`
+    	SELECT COUNT(*)
+    	FROM Notes
+    	LEFT JOIN NoteCollaborators ON Notes.id = NoteCollaborators.note_id
+    	WHERE Notes.id = ? AND (Notes.user_id = ? OR NoteCollaborators.user_id = ?)
+	`, noteID, userID, userID).Scan(&count)
 	if err != nil || count == 0 {
 		http.Error(w, "Note not found or unauthorized", http.StatusNotFound)
 		return
@@ -173,33 +195,60 @@ func DeleteNote(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+type CollaboratorRequest struct {
+	Username string `json:"username"`
+}
+
 func AddCollaboratorHandler(w http.ResponseWriter, r *http.Request) {
+	// Set appropriate headers
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Content-Type", "application/json")
+
+	// Parse the note ID from the URL
 	vars := mux.Vars(r)
-	noteIdStr := vars["noteID"]
-	noteID, err := strconv.Atoi(noteIdStr)
+	noteIDStr := vars["noteID"]
+	noteID, err := strconv.Atoi(noteIDStr)
 	if err != nil {
 		http.Error(w, "Invalid note ID", http.StatusBadRequest)
 		return
 	}
 
-	var req struct {
-		Username string `json:"username"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
-
-	err = utils.AddCollaborator(noteID, req.Username)
+	// Get the current user ID from the session
+	userID, err := middleware.GetUserIDFromRequest(r)
 	if err != nil {
-		if err.Error() == "user not found" {
-			http.Error(w, "User not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Error adding collaborator", http.StatusInternalServerError)
-		}
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Collaborator added!"))
+	// Check if the user has access to the note
+	hasAccess, err := utils.UserHasAccessToNote(userID, noteID)
+	if err != nil || !hasAccess {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	// Decode the request body
+	var collaboratorReq CollaboratorRequest
+	err = json.NewDecoder(r.Body).Decode(&collaboratorReq)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Get the collaborator's user ID
+	collaboratorID, err := utils.GetUserIDByUsername(collaboratorReq.Username)
+	if err != nil {
+		http.Error(w, "Collaborator not found", http.StatusNotFound)
+		return
+	}
+
+	// Add the collaborator to the note
+	err = utils.AddCollaboratorToNote(noteID, collaboratorID)
+	if err != nil {
+		log.Printf("Error adding collaborator to note: %v", err)
+		http.Error(w, "Error adding collaborator", http.StatusInternalServerError)
+		return
+	}
+
 }

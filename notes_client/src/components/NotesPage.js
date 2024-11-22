@@ -25,6 +25,8 @@ function NotesPage() {
   const [showCollaborateModal, setShowCollaborateModal] = useState(false);
   const [collaboratorUsername, setCollaboratorUsername] = useState('');
   const [collaborateError, setCollaborateError] = useState('');
+  const [collaborateNoteId, setCollaborateNoteId] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const isMobile = window.innerWidth <= 768;
 
@@ -136,6 +138,45 @@ function NotesPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/notes/getUserID', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUserId(data.user_id);
+        } else {
+          console.error('Failed to fetch user ID');
+        }
+      } catch (error) {
+        console.error('Error fetching user ID:', error);
+      }
+    };
+    fetchUserId();
+  }, []);
+
+  
+
+useEffect(() => {
+  const notificationWs = new WebSocket('ws://localhost:8080/notifications');
+
+  notificationWs.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    if (message.type === 'NEW_COLLABORATION') {
+      fetchNotes();
+    }
+  };
+
+  return () => {
+    notificationWs.close();
+  };
+}, []);
+
+
+
   const handleSelectNote = (note) => {
     setSelectedNote(note);
   };
@@ -168,14 +209,14 @@ function NotesPage() {
   if (error) return <p>{error}</p>;
 
 
-  const handleCollaborate = async (noteId) => {
-    if (!selectedNote) {
+  const handleCollaborate = async () => {
+    if (!collaborateNoteId) {
       setCollaborateError('No note selected');
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/notes/${noteId}/collaborators`, {
+      const response = await fetch(`http://localhost:8080/notes/${collaborateNoteId}/collaborators`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -184,9 +225,7 @@ function NotesPage() {
         body: JSON.stringify({ username: collaboratorUsername }),
       });
       if (response.ok) {
-        setShowCollaborateModal(false);
-        setCollaboratorUsername('');
-        setCollaborateError('');
+        closeCollaborateModal();
       } else {
         const errorText = await response.text();
         setCollaborateError(errorText);
@@ -194,6 +233,13 @@ function NotesPage() {
     } catch (error) {
       setCollaborateError('Error adding collaborator. Please try again.');
     }
+  };
+
+  const closeCollaborateModal = () => {
+    setShowCollaborateModal(false);
+    setCollaborateNoteId(null);
+    setCollaboratorUsername('');
+    setCollaborateError('');
   };
 
   
@@ -219,7 +265,14 @@ function NotesPage() {
                 className={`note-item ${selectedNote?.id === note.id ? 'active' : ''}`}
                 onClick={() => handleSelectNote(note)}
               >
-                <span>{note.title || 'Untitled'}</span>
+                <span>{note.title || 'Untitled'}
+                  {note.user_id !== currentUserId && (
+                    <i className= "fas fa-user-friends" title= "ColaBing"></i>
+                  )}
+                  {note.has_collaborators && (
+                    <i className= "fas fa-user-friends" title= "ColaBing"></i>
+                  )}
+                </span>
                 <button
                   className="note-options-btn"
                   onClick={(e) => handleNoteOptions(e, note.id)}
@@ -228,6 +281,7 @@ function NotesPage() {
                 </button>
                 {activeNoteMenu === note.id && (
                   <div className="note-options-menu">
+                    {note.user_id === currentUserId && (
                     <div
                       className="note-option delete"
                       onClick={(e) => {
@@ -239,10 +293,12 @@ function NotesPage() {
                       <i className="fas fa-trash"></i>
                       Delete
                     </div>
+                    )}
                     <div
                       className="note-option collaborate"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setCollaborateNoteId(note.id);
                         setShowCollaborateModal(true);
                         setActiveNoteMenu(null);
                       }}
@@ -385,8 +441,8 @@ function NotesPage() {
               {collaborateError && <p className="error-message">{collaborateError}</p>}
             </div>
             <div className="modal-actions">
-              <button className="cancel-btn" onClick={() => setShowCollaborateModal(false)}>Cancel</button>
-              <button className="add-btn" onClick={() => handleCollaborate(selectedNote.id)}>Add</button>
+              <button className="cancel-btn" onClick={closeCollaborateModal}>Cancel</button>
+              <button className="add-btn" onClick={() => handleCollaborate()}>Add</button>
             </div>
           </div>
         </div>
