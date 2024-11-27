@@ -83,6 +83,17 @@ func (c *Client) readPump() {
 		c.Conn.Close()
 	}()
 
+	userInfo := struct {
+		Type   string `json:"type"`
+		UserID int    `json:"userId"`
+	}{
+		Type:   "userInfo",
+		UserID: c.UserID,
+	}
+
+	infoBytes, _ := json.Marshal(userInfo)
+	c.Send <- infoBytes
+
 	c.Conn.SetReadLimit(maxMessageSize)
 	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Conn.SetPongHandler(func(string) error {

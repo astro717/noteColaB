@@ -65,7 +65,8 @@ const StatusIndicator = ({ currentStatus, isConnected, collaborators }) => {
 const CollaborativeEditor = ({ noteId, onSave, initialContent }) => {
   const [editorStatus, setEditorStatus] = useState('idle');
   const [isConnected, setIsConnected] = useState(false);
-  const [collaborators, setCollaborators] = useState([]);
+  const [collaborators, setCollaborators] = useState(new Map());
+  const currentUserIdRef = useRef(null);
   const wsRef = useRef(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef(null);
@@ -181,44 +182,56 @@ const CollaborativeEditor = ({ noteId, onSave, initialContent }) => {
 
     socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        
-        switch(data.type) {
-          case 'contentUpdate':
-            if (data.content && data.userId !== wsRef.current?.userId) {
+        const messages = event.data.split('\n');
+        messages.forEach(msg => {
+          if (!msg.trim()) return;
+          const data = JSON.parse(msg);
+          switch(data.type) {
+            case 'contentUpdate': 
+            if (data.content && data.userId !== currentUserIdRef.current) {
               handleContentUpdate(data.content, true);
-            }
-            if (data.note?.content) {
-              lastContentRef.current = data.note.content;
             }
             break;
 
-          case 'userConnected':
+            case 'userConnected':
+              if (data.userId) {
+                setCollaborators(prev => {
+                  const next = new Map(prev);
+                  //dont add if user is current
+                  if (data.userId !== currentUserIdRef.current) {
+                    next.set(data.userId, {
+                      id: data.userId,
+                      color: data.color
+                    });
+                  }
+                  return next;
+                });
+              }
+          break;
+          case 'userInfo':
+            currentUserIdRef.current = data.userId;
+            break;
+          
+          case 'userDisconnected':
             if (data.userId) {
               setCollaborators(prev => {
-                const existingCollaborator = prev.find(c => c.id === data.userId);
-                if (!existingCollaborator) {
-                  return [...prev, { id: data.userId, color: data.color }];
-                }
-                return prev;
+                const next = new Map(prev);
+                next.delete(data.userId);
+                return next;
               });
             }
             break;
 
-          case 'userDisconnected':
-            if (data.userId) {
-              setCollaborators(prev => prev.filter(c => c.id !== data.userId));
-            }
-            break;
-
-          default:
-            console.log('Unknown message type:', data.type);
-            break;
-        }
+            default: 
+              console.log('Unknown message type:', data.type);
+              break;
+          }
+        });
       } catch (error) {
         console.error('Error processing message:', error);
       }
     };
+        
 
     socket.onclose = (event) => {
       if (!event.wasClean) {
@@ -280,7 +293,7 @@ const CollaborativeEditor = ({ noteId, onSave, initialContent }) => {
       <StatusIndicator 
         currentStatus={editorStatus}
         isConnected={isConnected}
-        collaborators={collaborators}
+        collaborators={[...collaborators.values()]}
       />
       <EditorContent editor={editor} />
     </div>
