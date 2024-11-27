@@ -1,42 +1,49 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"noteColaB/handlers"
 	"noteColaB/middleware"
 	"noteColaB/routes"
 	"noteColaB/utils"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-
-	_ "github.com/mattn/go-sqlite3" // solo se ejecuta el init que registra el driver
-) // en database/sql (por eso el _)
+	_ "github.com/mattn/go-sqlite3"
+)
 
 var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true //this allows all origins might need to change this in production
+		return true
 	},
+	HandshakeTimeout: 10 * time.Second,
 }
 
-func main() {
+var hub *Hub
 
-	// inicializar database
+func main() {
+	// Inicializar database
 	err := utils.InitDB("notes.db")
 	if err != nil {
-		log.Fatalf("Error inicializing the database: %v", err)
+		log.Fatalf("Error initializing database: %v", err)
 	}
 
-	// inicialize hub
-	go RunHub()
+	// Inicializar hub
+	hub = newHub()
+	go hub.run()
 
-	// configurar enrutador
+	// Configurar enrutador
 	r := routes.SetupRoutes()
 	r.Use(handlers.EnableCors)
 
-	// ruta protegida con middleware autenticacion
+	// Rutas protegidas con middleware autenticación
 	protected := r.PathPrefix("/notes").Subrouter()
 	protected.Use(middleware.AuthMiddleware)
 	protected.HandleFunc("/", handlers.GetNotes).Methods("GET", "OPTIONS")
@@ -49,14 +56,11 @@ func main() {
 
 	log.Println("Servidor iniciado en http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
-
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	noteIDStr := vars["noteID"]
-
-	// convert noteID to int
 	noteID, err := strconv.Atoi(noteIDStr)
 	if err != nil {
 		http.Error(w, "Invalid note ID", http.StatusBadRequest)
@@ -69,30 +73,31 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verificar que el usuario tenga acceso a la nota
 	hasAccess, err := utils.UserHasAccessToNote(userID, noteID)
 	if err != nil || !hasAccess {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
-	// Actualizar la solicitud inicial a una conexión WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Error al actualizar a WebSocket:", err)
+		log.Printf("Error upgrading to websocket: %v", err)
 		return
 	}
 
+	color := fmt.Sprintf("#%06x", rand.Intn(0xFFFFFF))
+
 	client := &Client{
+		Hub:    hub,
 		NoteID: noteID,
+		UserID: userID,
+		Color:  color,
 		Conn:   conn,
-		Send:   make(chan []byte),
+		Send:   make(chan []byte, 256),
 	}
 
-	// Registrar el cliente
-	register <- client
+	client.Hub.register <- client
 
-	// Manejar lectura y escritura en goroutines
-	go client.WriteMessages()
-	client.ReadMessages()
+	go client.writePump()
+	client.readPump()
 }

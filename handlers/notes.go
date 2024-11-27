@@ -136,28 +136,63 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify note ownership before updating
+	// Verify note access before updating
 	var count int
 	err = utils.Db.QueryRow(`
-    	SELECT COUNT(*)
-    	FROM Notes
-    	LEFT JOIN NoteCollaborators ON Notes.id = NoteCollaborators.note_id
-    	WHERE Notes.id = ? AND (Notes.user_id = ? OR NoteCollaborators.user_id = ?)
-	`, noteID, userID, userID).Scan(&count)
+        SELECT COUNT(*)
+        FROM Notes
+        LEFT JOIN NoteCollaborators ON Notes.id = NoteCollaborators.note_id
+        WHERE Notes.id = ? AND (Notes.user_id = ? OR NoteCollaborators.user_id = ?)
+    `, noteID, userID, userID).Scan(&count)
 	if err != nil || count == 0 {
 		http.Error(w, "Note not found or unauthorized", http.StatusNotFound)
 		return
 	}
 
-	_, err = utils.Db.Exec(`UPDATE Notes SET title = ?, content = ? WHERE id = ? AND user_id = ?`,
-		updatedNote.Title, updatedNote.Content, noteID, userID)
+	// Actualizar la nota permitiendo que colaboradores modifiquen
+	_, err = utils.Db.Exec(`
+        UPDATE Notes 
+        SET title = ?, content = ? 
+        WHERE id = ? AND EXISTS (
+            SELECT 1 
+            FROM Notes n
+            LEFT JOIN NoteCollaborators nc ON n.id = nc.note_id
+            WHERE n.id = ? AND (n.user_id = ? OR nc.user_id = ?)
+        )`,
+		updatedNote.Title, updatedNote.Content, noteID, noteID, userID, userID)
+
 	if err != nil {
+		log.Printf("Error updating note: %v", err)
 		http.Error(w, "Error updating note", http.StatusInternalServerError)
 		return
 	}
 
+	// Recuperar la nota actualizada para confirmar los cambios
+	var updatedContent Note
+	err = utils.Db.QueryRow(`
+        SELECT id, title, content, user_id,
+        CASE WHEN EXISTS (
+            SELECT 1 FROM NoteCollaborators WHERE note_id = Notes.id
+        ) THEN 1 ELSE 0 END AS has_collaborators
+        FROM Notes
+        WHERE id = ?
+    `, noteID).Scan(
+		&updatedContent.ID,
+		&updatedContent.Title,
+		&updatedContent.Content,
+		&updatedContent.UserID,
+		&updatedContent.HasCollaborators,
+	)
+
+	if err != nil {
+		log.Printf("Error fetching updated note: %v", err)
+		http.Error(w, "Error confirming update", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedNote)
+	json.NewEncoder(w).Encode(updatedContent)
 }
 
 func DeleteNote(w http.ResponseWriter, r *http.Request) {

@@ -30,6 +30,35 @@ function NotesPage() {
 
   const isMobile = window.innerWidth <= 768;
 
+  const handleSaveNote = async (updatedNote) => {
+    try {
+      const response = await fetch('http://localhost:8080/notes/${updatedNote.id}', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(updatedNote),
+      });
+
+      if (!response.ok) {
+        throw new Error('failed to save the note');
+      }
+
+      const savedNote = await response.json();
+
+      setNotes(prevNotes =>
+        prevNotes.map(note => 
+          note.id === savedNote.id ? savedNote : note
+        )
+      );
+      return savedNote;
+    } catch (error) {
+      console.error('error saving note:', error);
+      throw error;
+    }
+  };
+
   const handleLogout = () => {
     try {
       document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -159,24 +188,6 @@ function NotesPage() {
   }, []);
 
   
-
-useEffect(() => {
-  const notificationWs = new WebSocket('ws://localhost:8080/notifications');
-
-  notificationWs.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    if (message.type === 'NEW_COLLABORATION') {
-      fetchNotes();
-    }
-  };
-
-  return () => {
-    notificationWs.close();
-  };
-}, []);
-
-
-
   const handleSelectNote = (note) => {
     setSelectedNote(note);
   };
@@ -352,7 +363,7 @@ useEffect(() => {
           }}
         >
           {selectedNote ? (
-            <NoteEditor note={selectedNote} onSave={fetchNotes} />
+            <NoteEditor note={selectedNote} onSave={handleSaveNote} />
           ) : (
             <div className="empty-state">
               Select or create a new note to start editing or...<br />

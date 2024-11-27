@@ -9,6 +9,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type Note struct {
+	ID               int    `json:"id"`
+	Title            string `json:"title"`
+	Content          string `json:"content"`
+	UserID           int    `json:"user_id"`
+	HasCollaborators bool   `json:"has_collaborators"`
+}
+
 // puntero a la DB. variables exportadas deben empezar con mayuscula
 var Db *sql.DB
 
@@ -133,11 +141,66 @@ func UserHasAccessToNote(userID, noteID int) (bool, error) {
 
 func UpdateNoteContent(noteID int, content string) error {
 	db := GetDB()
-	_, err := db.Exec("UPDATE notes SET content = ? WHERE id = ?", content, noteID)
+
+	// Primero verificar si la nota existe y obtener su información
+	var existingNote struct {
+		content string
+		userID  int
+	}
+	err := db.QueryRow(`
+        SELECT content, user_id 
+        FROM Notes 
+        WHERE id = ?
+    `, noteID).Scan(&existingNote.content, &existingNote.userID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("note not found")
+		}
+		return err
+	}
+
+	// Actualizar el contenido
+	result, err := db.Exec(`
+        UPDATE Notes 
+        SET content = ? 
+        WHERE id = ?
+    `, content, noteID)
+
 	if err != nil {
 		return err
 	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errors.New("note not updated")
+	}
+
 	return nil
+}
+
+func GetNoteWithCollaborators(noteID int) (*Note, error) {
+	db := GetDB()
+	note := &Note{}
+
+	err := db.QueryRow(`
+        SELECT n.id, n.title, n.content, n.user_id,
+        CASE WHEN EXISTS (
+            SELECT 1 FROM NoteCollaborators WHERE note_id = n.id
+        ) THEN 1 ELSE 0 END as has_collaborators
+        FROM Notes n
+        WHERE n.id = ?
+    `, noteID).Scan(&note.ID, &note.Title, &note.Content, &note.UserID, &note.HasCollaborators)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return note, nil
 }
 
 func GetNoteContent(noteID int) (string, error) {
