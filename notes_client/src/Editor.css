@@ -130,3 +130,66 @@
         opacity: 0.5;
     }
 }
+
+.floating-menu {
+    display: flex;
+    background-color: #1c1c1c;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    gap: 0.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .menu-item-btn {
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    color: #ffffff;
+    transition: all 0.2s;
+  }
+  
+  .menu-item-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .menu-item-btn.is-active {
+    color: #0066cc;
+    background-color: rgba(0, 102, 204, 0.2);
+  }
+  
+  .color-picker-container {
+    position: relative;
+  }
+  
+  .color-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.4rem;
+    background: #1c1c1c;
+    padding: 0.5rem;
+    border-radius: 0.4rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 0.5rem;
+    z-index: 1000;
+  }
+  
+  .color-option {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    padding: 0;
+  }
+  
+  .color-option:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  }

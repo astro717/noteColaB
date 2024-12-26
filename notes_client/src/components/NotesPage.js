@@ -151,7 +151,7 @@ function NotesPage() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setIsSidebarVisible((prev) => !prev);
       }
@@ -255,7 +255,7 @@ function NotesPage() {
   
     return (
       <div className="notes-page">
-        {/* Sidebar and other components... */}
+        
         <div
           ref={sidebarRef}
           className={`sidebar ${isMobile && isMobileSidebarVisible ? 'visible' : ''}`}
@@ -426,12 +426,20 @@ function NotesPage() {
               <h3 className="modal-title">Keyboard Shortcuts</h3>
               <div className="shortcuts-list">
                 <div className="shortcut-item">
-                  <span className="shortcut-key">Ctrl + B</span>
+                  <span className="shortcut-key">Ctrl/Cmd + K</span>
                   <span className="shortcut-desc">Toggle Sidebar</span>
                 </div>
                 <div className="shortcut-item">
-                  <span className="shortcut-key">Ctrl + O</span>
+                  <span className="shortcut-key">Ctrl/Cmd + O</span>
                   <span className="shortcut-desc">New Note</span>
+                </div>
+                <div className="shortcut-item">
+                  <span className="shortcut-key">Ctrl/Cmd + B</span>
+                  <span className="shortcut-desc">Toggle Bold</span>
+                </div>
+                <div className="shortcut-item">
+                  <span className="shortcut-key">Ctrl/Cmd + I</span>
+                  <span className="shortcut-desc">Toggle Italic</span>
                 </div>
               </div>
             </div>

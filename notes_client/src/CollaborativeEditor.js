@@ -1,12 +1,22 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import TextStyle from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
 import { debounce } from './debounce';
 import './Editor.css';
 
 const RECONNECT_DELAY = 2000;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const SAVE_DELAY = 1000;
+
+const COLORS = [
+  { name: 'White', value: '#ffffff' },
+  { name: 'Gray', value: '#9BA3AF' },
+  { name: 'Purple', value: '#0066cc' }, 
+  { name: 'Red', value: '#FF5C5C' },
+  { name: 'Green', value: '#4CAF50' }
+];
 
 const StatusIndicator = ({ currentStatus, isConnected, collaborators }) => {
   const getStatusConfig = () => {
@@ -62,6 +72,67 @@ const StatusIndicator = ({ currentStatus, isConnected, collaborators }) => {
   );
 };
 
+
+const FloatingMenu = ({ editor }) => {
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  if (!editor) return null;
+
+  return (
+    <BubbleMenu 
+      className="floating-menu" 
+      tippyOptions={{ duration: 100 }} 
+      editor={editor}
+    >
+      <button
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        className={`menu-item-btn ${editor.isActive('bold') ? 'is-active' : ''}`}
+        title="Bold (Ctrl/Cmd + B)"
+      >
+        <i className="fas fa-bold"></i>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        className={`menu-item-btn ${editor.isActive('italic') ? 'is-active' : ''}`}
+        title="Italic (Ctrl/Cmd + I)"
+      >
+        <i className="fas fa-italic"></i>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        className={`menu-item-btn ${editor.isActive('heading', { level: 3 }) ? 'is-active' : ''}`}
+      >
+        <i className="fas fa-heading"></i>
+      </button>
+      <div className="color-picker-container">
+        <button
+          onClick={() => setShowColorPicker(!showColorPicker)}
+          className="menu-item-btn"
+        >
+          <i className="fas fa-palette"></i>
+        </button>
+        {showColorPicker && (
+          <div className="color-options">
+            {COLORS.map((color) => (
+              <button
+                key={color.value}
+                className="color-option"
+                style={{ backgroundColor: color.value }}
+                onClick={() => {
+                  editor.chain().focus().setColor(color.value).run();
+                  setShowColorPicker(false);
+                }}
+                title={color.name}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </BubbleMenu>
+  );
+};
+
+
 const CollaborativeEditor = ({ noteId, onSave, initialContent }) => {
   const [editorStatus, setEditorStatus] = useState('idle');
   const [isConnected, setIsConnected] = useState(false);
@@ -82,7 +153,7 @@ const CollaborativeEditor = ({ noteId, onSave, initialContent }) => {
   []);
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit, TextStyle, Color],
     content: initialContent || '',
     onUpdate: ({ editor }) => {
       if (isLocalUpdateRef.current) {
@@ -91,6 +162,25 @@ const CollaborativeEditor = ({ noteId, onSave, initialContent }) => {
       }
       const html = editor.getHTML();
       handleContentUpdate(html, false);
+    },
+    editorProps: {
+      handleKeyDown: (view, event) => {
+        if (event.ctrlKey || event.metaKey) {
+          switch (event.key.toLowerCase()) {
+            case 'b':
+              event.preventDefault();
+              editor.chain().focus().toggleBold().run();
+              return true;
+            case 'i':
+              event.preventDefault();
+              editor.chain().focus().toggleItalic().run();
+              return true;
+            default:
+              return false;
+          }
+        }
+        return false;
+      }
     }
   });
 
@@ -296,6 +386,7 @@ const CollaborativeEditor = ({ noteId, onSave, initialContent }) => {
         collaborators={[...collaborators.values()]}
       />
       <EditorContent editor={editor} />
+      <FloatingMenu editor={editor}/>
     </div>
   );
 };
