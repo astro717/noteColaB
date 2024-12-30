@@ -32,7 +32,7 @@ function NoteEditor({ note, onSave }) {
         console.error('Error saving title:', err);
       }
     }, 1000),
-    [saveNote]
+    [note]
   );
 
   const handleTitleChange = (e) => {
@@ -55,7 +55,7 @@ function NoteEditor({ note, onSave }) {
     if (note) {
       setTitle(note.title || '');
     }
-  }, [note, saveNote]);
+  }, [note]);
 
   return (
     <div className="note-editor">

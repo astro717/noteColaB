@@ -1,5 +1,5 @@
 # noteColaB
-#### Video Demo:  <URL HERE>
+#### Video Demo:  <https://youtu.be/JSP4MmIBSMQ>
 #### Description:
 noteColaB is a collaborative note-taking web application where multiple users can edit the same note simultaneously, similar to Google Docs. The project combines the collaborative power of Google Docs with the modern design aesthetics of Notion and Obsidian. While it doesn't match the full capabilities of these established platforms, it demonstrates a functional approach to real-time collaborative note-taking for my CS50 final project.
 
