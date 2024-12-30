@@ -7,7 +7,7 @@ function NoteEditor({ note, onSave }) {
   const [title, setTitle] = useState(note ? note.title : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   const saveNote = async (updates) => {
     setSaving(true);
     setError(null);
@@ -23,7 +23,7 @@ function NoteEditor({ note, onSave }) {
       setSaving(false);
     }
   };
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSaveTitle = useCallback(
     debounce(async (newTitle) => {
       try {
@@ -32,7 +32,7 @@ function NoteEditor({ note, onSave }) {
         console.error('Error saving title:', err);
       }
     }, 1000),
-    [note]
+    [saveNote]
   );
 
   const handleTitleChange = (e) => {
@@ -49,13 +49,13 @@ function NoteEditor({ note, onSave }) {
       console.error('Error saving content:', err);
       throw err;
     }
-  }, [note]);
+  }, [note, saveNote]);
 
   useEffect(() => {
     if (note) {
       setTitle(note.title || '');
     }
-  }, [note]);
+  }, [note, saveNote]);
 
   return (
     <div className="note-editor">

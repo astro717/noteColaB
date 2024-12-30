@@ -31,32 +31,53 @@ function NotesPage() {
   const isMobile = window.innerWidth <= 768;
 
   const handleSaveNote = async (updatedNote) => {
-  try {
-    const response = await fetch(`http://localhost:8080/notes/${updatedNote.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(updatedNote),
-    });
-
-    if (!response.ok) {
-      throw new Error('failed to save the note');
+    try {
+      const url = updatedNote.id 
+        ? `http://localhost:8080/notes/${updatedNote.id}`
+        : 'http://localhost:8080/notes/';
+      
+      const method = updatedNote.id ? 'PUT' : 'POST';
+  
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(updatedNote),
+      });
+  
+      if (!response.ok) {
+        throw new Error('failed to save the note');
+      }
+  
+      try {
+        const savedNote = await response.json();
+        if (!updatedNote.id) {
+          setSelectedNote(savedNote);
+          setNotes(prevNotes => [...prevNotes, savedNote]);
+        } else {
+          setNotes(prevNotes =>
+            prevNotes.map(note => 
+              note.id === savedNote.id ? savedNote : note
+            )
+          );
+        }
+        return savedNote;
+      } catch (jsonError) {
+        fetchNotes();
+        const latestNote = (await fetch('http://localhost:8080/notes/',{
+          credentials: 'include',
+        }).then(r=> r.json())).pop();
+        setSelectedNote(latestNote);
+        return latestNote;
+      }
+    } catch (error) {
+      console.error('error saving note:', error);
+      throw error;
     }
-
-    const savedNote = await response.json();
-    setNotes(prevNotes =>
-      prevNotes.map(note => 
-        note.id === savedNote.id ? savedNote : note
-      )
-    );
-    return savedNote;
-  } catch (error) {
-    console.error('error saving note:', error);
-    throw error;
-  }
-};
+  };
+  
 
   const handleLogout = () => {
     try {
